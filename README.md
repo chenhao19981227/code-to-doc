@@ -136,6 +136,12 @@ python eval/qa_eval.py    --kb docs/biz --golden benchmark/golden-set/<x>.yaml -
 注：上表 71.0% 是**较易 40 题上的单次跑分**；扩到 85 题并 3 次判分后，可信数字为 **53.1%**。
 `faithfulness=100%`、`retrieval_hit_rate=92.2%`、L1 幻觉 0%、L0 引用 0% 无效。
 
+**细节补全实验（KB v3，1111 卡）**：补出 222 张细节卡后准确率 53.1% → **56.2%（+3.1pt）**，
+但 **faithfulness 100% → 98.8%（破红线）**、拒答 95.2% → 90.5%、检索命中 92.2% → 89.1%。
+**结论：+3.1pt 是用安全裕度换来的，故保留 v2（`docs/biz-kb2`）为发布版本**，v3（`docs/biz-kb3`）作为高覆盖/低裕度备选。
+判断依据与停止优化的理由见 [`docs/OPTIMIZATION-RESULTS.md`](docs/OPTIMIZATION-RESULTS.md) §7–§8。
+
+
 **平台期诊断**：检索命中已 92%（召回饱和）；`wrong & facts-absent = 0`（事实都在库里）；
 失败集中于**多事实组合题**（需跨 2~3 张卡合成）。剩余差距需高成本路径（重提取提高细节密度）。
 完整分析与路径对比见 [`docs/OPTIMIZATION-RESULTS.md`](docs/OPTIMIZATION-RESULTS.md)；

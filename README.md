@@ -122,16 +122,25 @@ python eval/qa_eval.py    --kb docs/biz --golden benchmark/golden-set/<x>.yaml -
 | L4 检索命中率 | 67.7% | 87.1% | 87.1% | — |
 | L4 忠实度 / 拒答正确率 | 100% / 100% | 100% / 100% | 100% / **100%** | — / ≥90% ✅ |
 
-**自主优化链（Kill Bill，40 题）**：9.7% → ~30%（深提取）→ 41.9%（检索去重）→ 48.4%（k=20）
-→ 61.3%（作答 prompt 强化）→ 64.5%（LLM rerank）→ **71.0%（refine 自省补全）**，净提升 **7.3×**。
-当前稳定区间 **~69% ± 2pt**（同配置三次 71.0/67.7/67.7），加权分 ~80%。
+**自主优化链（Kill Bill）**：9.7% → ~30%（深提取）→ 41.9%（检索去重）→ 48.4%（k=20）
+→ 61.3%（作答 prompt 强化）→ 64.5%（LLM rerank）→ 71.0%（refine 自省补全），净提升 **7.3×**。
 
-**平台期诊断**：检索命中已 90–100%（召回饱和）；`wrong & facts-absent = 0`（事实都在库里）；
-失败形态是 **partial**——含枚举细节的「规则/行为卡」常被「实体/定义卡」挤出 top-k。
-剩余差距需高成本路径（重提取更高细节 / 更强作答），完整分析与路径对比见
-[`docs/OPTIMIZATION-RESULTS.md`](docs/OPTIMIZATION-RESULTS.md)；原始计划见 [`docs/NEXT-STEPS.md`](docs/NEXT-STEPS.md)。
+**可信基线（85 题 + 3 次判分）**：
 
-**测量警示**：单次跑分噪声 ≈ ±4pt，任何 <5pt 的改动必须多次跑取均值才能判定。
+| 子集 | 准确率 | 加权 | 拒答 |
+|---|---|---|---|
+| 原 40 题（较易） | 67.7% | 80.6% | 100.0% |
+| 新 45 题（加难） | 39.4% | 59.1% | 91.7% |
+| **全部 85 题** | **53.1%** | **69.5%** | 95.2% |
+
+注：上表 71.0% 是**较易 40 题上的单次跑分**；扩到 85 题并 3 次判分后，可信数字为 **53.1%**。
+`faithfulness=100%`、`retrieval_hit_rate=92.2%`、L1 幻觉 0%、L0 引用 0% 无效。
+
+**平台期诊断**：检索命中已 92%（召回饱和）；`wrong & facts-absent = 0`（事实都在库里）；
+失败集中于**多事实组合题**（需跨 2~3 张卡合成）。剩余差距需高成本路径（重提取提高细节密度）。
+完整分析与路径对比见 [`docs/OPTIMIZATION-RESULTS.md`](docs/OPTIMIZATION-RESULTS.md)；
+原始计划见 [`docs/NEXT-STEPS.md`](docs/NEXT-STEPS.md)。
+
 
 
 详见 `docs/biz-kb2/verification/report.md`（v2）与 `docs/biz-killbill/verification/report.md`（v1）。

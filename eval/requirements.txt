@@ -1,0 +1,11 @@
+# Evaluation harness dependencies.
+#
+# The harness is deliberately dependency-light: every script uses only the Python
+# standard library EXCEPT the golden-set loader in eval/qa_eval.py, which needs PyYAML.
+#
+# Install:
+#     python -m pip install -r eval/requirements.txt
+#
+# Everything else (LLM transport = urllib, BM25 = hand-written) is stdlib-only.
+
+PyYAML>=6.0

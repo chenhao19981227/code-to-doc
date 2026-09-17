@@ -1,0 +1,408 @@
+meta:
+  project: killbill
+  module: invoice
+  domain: "subscription-billing"
+  created_by: synthetic
+  blinded: true
+  version: 1
+  notes: "盲化黄金集，取自 killbill-docs 官方 AsciiDoc 文档（userguide/ 与 overdue-configurations/）并交叉核对源码，不依赖任何生成的知识库。题目用中文用户口语，答案由英文文档事实翻译而来。"
+
+questions:
+  # ---------- 订阅目录 / 计划 / 阶段 / 试用 ----------
+  - id: KB-Q001
+    question: "订购服务的试用期结束后会自动开始扣费吗？"
+    type: positive
+    difficulty: easy
+    module: subscription
+    expected_answer: "会。计划（Plan）的 TRIAL 阶段通常配置为 NO_BILLING_PERIOD 且固定价格为 $0（免费或大幅折扣），试用阶段结束、时长到期后，系统会自动进入下一个阶段（例如 EVERGREEN 常规计费阶段），并从该阶段开始按周期价格计费。"
+    answer_source: "docs:userguide/subscription/includes/catalog-core.adoc"
+    synonyms: ["试用期结束扣费", "免费试用后收费", "试用转正式计费", "trial phase billing", "after trial charge"]
+    notes: "catalog-core.adoc Plan/Phase 与 Spy Car 示例"
+
+  - id: KB-Q002
+    question: "计划（Plan）的阶段（Phase）可以配置成哪几种类型？"
+    type: positive
+    difficulty: easy
+    module: subscription
+    expected_answer: "TRIAL（试用）、DISCOUNT（折扣）、FIXEDTERM（固定期限）、EVERGREEN（长期/无限期）四种。一个计划至少包含一个阶段。"
+    answer_source: "docs:userguide/subscription/includes/catalog-core.adoc"
+    synonyms: ["阶段类型", "计划阶段", "phase type", "TRIAL DISCOUNT FIXEDTERM EVERGREEN"]
+    notes: "catalog-core.adoc Phase Type"
+
+  - id: KB-Q003
+    question: "Kill Bill 里的产品品类（Product Category）有哪些？"
+    type: positive
+    difficulty: easy
+    module: subscription
+    expected_answer: "三种：BASE（基础产品，可以有附加组件）、ADD_ON（附加组件产品，可与基础产品打包）、STANDALONE（独立产品，不能带附加组件）。"
+    answer_source: "docs:userguide/subscription/includes/catalog-core.adoc"
+    synonyms: ["产品类别", "产品类型", "product category", "BASE ADD_ON STANDALONE"]
+    notes: "catalog-core.adoc Product Categories"
+
+  - id: KB-Q004
+    question: "同一个订阅包（Bundle）里可以有多个基础（BASE）订阅吗？"
+    type: positive
+    difficulty: medium
+    module: subscription
+    expected_answer: "不可以。一个 SubscriptionBundle 中最多只能有一个 BASE 品类的订阅，但可以有任意多个 ADD_ON 订阅；对 BASE 订阅的操作（如取消、变更计划）会自动影响同一 Bundle 内的 ADD_ON 订阅。"
+    answer_source: "docs:userguide/subscription/includes/entitlement.adoc"
+    synonyms: ["多个基础订阅", "订阅包基础订阅数量", "bundle base subscription", "附加组件数量"]
+    notes: "entitlement.adoc SubscriptionBundle"
+
+  # ---------- 计费对齐与按比例计费 ----------
+  - id: KB-Q005
+    question: "Kill Bill 的计费对齐（Billing Alignment）规则支持哪几种方式？"
+    type: positive
+    difficulty: medium
+    module: subscription
+    expected_answer: "三种：ACCOUNT（把订阅的账单周期对齐到账户的 Bill Cycle Day）、SUBSCRIPTION（对齐到该订阅计划的首次计费日）、BUNDLE（对齐到同一 Bundle 中基础计划所用的那一天的 BCD，常用于附加组件）。"
+    answer_source: "docs:userguide/subscription/includes/catalog-core.adoc"
+    synonyms: ["计费对齐", "账单对齐", "billing alignment", "ACCOUNT SUBSCRIPTION BUNDLE"]
+    notes: "catalog-core.adoc Billing Alignment Rules"
+
+  - id: KB-Q006
+    question: "为什么新订阅的第一张发票有时金额会被按比例折算（proration）？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "当新订阅的账单周期日（BCD）与它的开始日期不一致时，为了把计费周期对齐到 BCD，初始账单就需要按比例折算；此后每当该订阅的 BCD 被更改，也会发生按比例折算。"
+    answer_source: "docs:userguide/subscription/includes/catalog-core.adoc"
+    synonyms: ["按比例计费", "首张发票折算", "proration", "pro-rated", "BCD 对齐折算"]
+    notes: "catalog-core.adoc Billing Alignment Rules"
+
+  - id: KB-Q007
+    question: "一次性固定费用（FIXED 项目）会被按比例折算吗？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "不会。Fixed item（固定/一次性费用）只有开始日期、没有账单周期，因此永远不会被按比例折算（proration）。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-overview.adoc"
+    synonyms: ["固定费用折算", "一次性费用", "fixed item proration", "FIXED 不折算"]
+    notes: "invoicing-overview.adoc Fixed items"
+
+  # ---------- 发票生成、项目与余额 ----------
+  - id: KB-Q008
+    question: "用户升级计划时，系统怎么算旧计划没用完的那部分费用？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "系统会为新计划剩余周期生成一条新的 RECURRING 项目，同时生成一条负数的 REPAIR_ADJ 项目来冲抵旧计划未使用的部分。如果 REPAIR_ADJ 的绝对值大于新 RECURRING 金额，系统还会自动生成 CBA_ADJ 把余额归零，并把多出的部分变成账户信用供后续发票抵扣。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-invoice-items.adoc"
+    synonyms: ["计划变更计费", "升级差额", "变更计划退款", "REPAIR_ADJ", "upgrade proration"]
+    notes: "invoicing-invoice-items.adoc Plan Changes"
+
+  - id: KB-Q009
+    question: "Kill Bill 的发票项目（Invoice Item）都有哪些类型？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "主要类型有：RECURRING（周期性费用）、FIXED（一次性固定费用）、EXTERNAL_CHARGE（目录外的外部一次性费用）、USAGE（用量费用）、TAX（税费，由税务插件添加）、ITEM_ADJ（发票项目调整，常伴退款）、CREDIT_ADJ（发票级贷记）、REPAIR_ADJ（订阅变更产生的内部冲抵）、CBA_ADJ（信用余额调整）；另有 PARENT_SUMMARY（父子账户汇总）类型。其中只有 TAX 不是核心系统添加的。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-overview.adoc"
+    synonyms: ["发票项目类型", "invoice item type", "RECURRING FIXED USAGE CBA_ADJ", "发票明细类型"]
+    notes: "invoicing-overview.adoc + glossary invoice_item_type"
+
+  - id: KB-Q010
+    question: "Kill Bill 的发票是什么时候生成的？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "它是事件驱动而非批处理的：只要系统里发生了需要新发票的变更就立即生成，例如订阅发生变化（创建、变更计划、取消等）、系统检测到周期性费用到期（如按月订阅）、或操作员创建外部费用/调整历史发票/触发未来发票时。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-overview.adoc"
+    synonyms: ["发票生成时机", "何时开票", "invoice generation", "事件驱动开票"]
+    notes: "invoicing-overview.adoc"
+
+  - id: KB-Q011
+    question: "什么叫信用余额调整（CBA，credit balance adjustment）？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "每当一张发票的余额要变成负数时，系统会自动插入一个 CBA_ADJ 项目把该发票余额拉回 0，并把这份信用记到账户上，用于抵扣之后的发票。整个账户的 CBA 项目之和应始终为正或零。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-overview.adoc"
+    synonyms: ["CBA", "信用余额调整", "credit balance adjustment", "账户信用", "余额归零"]
+    notes: "invoicing-overview.adoc"
+
+  - id: KB-Q012
+    question: "发票余额在哪些情况下会是 0？"
+    type: positive
+    difficulty: hard
+    module: invoice
+    expected_answer: "以下四种情况余额视为 0：发票被打了 WRITTEN_OFF（核销）标签；发票处于 DRAFT 状态；这是迁移导入（migration/imported）的发票；这是 HA 场景下的子发票且其父汇总发票已全额支付。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-overview.adoc"
+    synonyms: ["发票余额为零", "invoice balance zero", "WRITTEN_OFF", "DRAFT", "子发票已付"]
+    notes: "invoicing-overview.adoc；源码 DefaultInvoice.getBalance 一致"
+
+  - id: KB-Q013
+    question: "一张发票可以同时包含多个订阅的费用吗？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "可以。一张发票会为某个时间段合并该客户名下所有订阅的费用；同一张发票上既可能有不同订阅的项目，也可能有与订阅无关的项目（如调整、税费）。"
+    answer_source: "docs:userguide/glossary/Kill-Bill-Glossary.adoc"
+    synonyms: ["一张发票多个订阅", "合并计费", "invoice multiple subscriptions", "多订阅同发票"]
+    notes: "glossary Invoice"
+
+  # ---------- 用量计费 ----------
+  - id: KB-Q014
+    question: "Kill Bill 支持哪些用量计费（Usage Billing）类型？"
+    type: positive
+    difficulty: hard
+    module: invoice
+    expected_answer: "支持两种用量类型：CONSUMABLE（按消费的单位数量计费，例如本期消耗的水量）和 CAPACITY（按速率或上限计费，取该周期内出现的最大值/峰值，例如 MBytes/秒）。"
+    answer_source: "docs:userguide/subscription/includes/catalog-usage.adoc"
+    synonyms: ["用量计费", "usage billing", "CONSUMABLE", "CAPACITY", "按量计费"]
+    notes: "catalog-usage.adoc Usage Modes"
+
+  - id: KB-Q015
+    question: "用量计费的 ALL_TIER 和 TOP_TIER 两种策略有什么区别？"
+    type: positive
+    difficulty: hard
+    module: invoice
+    expected_answer: "ALL_TIER：用量落在各个阶梯（tier）上分别按该阶梯价格计费再累加；TOP_TIER：全部用量都按所达到的最高阶梯的价格计费。"
+    answer_source: "docs:userguide/subscription/includes/catalog-usage.adoc"
+    synonyms: ["ALL_TIER", "TOP_TIER", "阶梯计价策略", "tier policy", "好阶梯 vs 顶阶梯"]
+    notes: "catalog-usage.adoc Consumable In Arrear Mode 及 invoicing-usage.adoc"
+
+  - id: KB-Q016
+    question: "系统默认会回溯多少个计费周期来重算用量费用？可以改吗？"
+    type: positive
+    difficulty: hard
+    module: invoice
+    expected_answer: "默认回溯过去 2 个计费周期；由系统属性/租户配置 org.killbill.invoice.readMaxRawUsagePreviousPeriod 控制（默认值 2）。设为 0 表示忽略所有历史用量数据（既不补收迟到用量也不处理缺失数据）。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-usage.adoc"
+    synonyms: ["用量回溯周期", "迟到用量", "readMaxRawUsagePreviousPeriod", "late usage", "补收用量"]
+    notes: "invoicing-usage.adoc Past Usage Periods"
+
+  - id: KB-Q017
+    question: "Kill Bill 提供哪些发票试算（Dry Run）方式？"
+    type: positive
+    difficulty: hard
+    module: invoice
+    expected_answer: "提供几种：UPCOMING_INVOICE（账户下一次即将生成的发票，可按某一订阅或 bundle 过滤）、TARGET_DATE（给定目标日期系统会生成什么发票）、SUBSCRIPTION_ACTION（给定订阅变更，如新订阅/换计划/取消，系统会生成什么发票）。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-dry-run.adoc"
+    synonyms: ["发票试算", "dry run invoice", "UPCOMING_INVOICE", "TARGET_DATE", "预测发票"]
+    notes: "invoicing-dry-run.adoc Dry Run Modes"
+
+  - id: KB-Q018
+    question: "管理员给账户加一笔 20 美元的信用（credit），在发票层面会怎么体现？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "会生成一张金额为 -20 的发票，其中包含一条负数 CREDIT_ADJ 项目；系统随之自动生成一条正数 CBA_ADJ（+20）把余额归零，从而形成可用于抵扣后续发票的账户信用。该信用发票整体就是一条负 CREDIT_ADJ 加一条正 CBA_ADJ。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-invoice-items.adoc"
+    synonyms: ["账户信用", "加信用", "贷记", "add credit", "CREDIT_ADJ CBA_ADJ"]
+    notes: "invoicing-invoice-items.adoc Credit；glossary Credit Invoice"
+
+  # ---------- 付款方式、重试与退款 ----------
+  - id: KB-Q019
+    question: "系统默认会在发票生成后自动扣款吗？什么情况下不会自动扣款？"
+    type: positive
+    difficulty: medium
+    module: payment
+    expected_answer: "会。只要账户有一个有效的默认支付方式，系统就会自动对发票全额扣款。但以下情况会禁用自动扣款：账户没有默认支付方式；或账户被打了 AUTO_PAY_OFF 或 MANUAL_PAY 控制标签（前者禁止系统自动支付，后者表示款项在 Kill Bill 之外收取，例如支票）。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-invoice-payments.adoc"
+    synonyms: ["自动扣款", "auto pay", "AUTO_PAY_OFF", "MANUAL_PAY", "默认支付方式"]
+    notes: "invoicing-invoice-payments.adoc；tags-overview.adoc"
+
+  - id: KB-Q020
+    question: "可以用一笔支付同时支付多张发票吗？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "不支持（官方文档明确写“尚不支持”）。默认是一笔支付对应一张发票并全额支付；但允许对同一张发票进行多次部分支付。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-invoice-payments.adoc"
+    synonyms: ["一笔支付多张发票", "多次部分支付", "partial payment", "一个 payment 多 invoice"]
+    notes: "invoicing-invoice-payments.adoc"
+
+  - id: KB-Q021
+    question: "发票支付发生后如果退款（refund），在发票-支付记录里如何体现？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "会新增一条 REFUND 类型的 InvoicePayment 记录，金额为负数（例如原支付是 +$20，则退款记录为 -$20），系统据此重新计算发票余额。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-invoice-payments.adoc"
+    synonyms: ["退款", "refund", "REFUND invoice payment", "退回款项"]
+    notes: "invoicing-invoice-payments.adoc Refund"
+
+  - id: KB-Q022
+    question: "支付插件返回 ERROR（例如余额不足）时，Kill Bill 会把交易置为哪个状态、返回什么 HTTP 码？"
+    type: positive
+    difficulty: hard
+    module: payment
+    expected_answer: "插件返回 ERROR 时，支付交易状态为 PAYMENT_FAILURE，支付状态为对应的 *_FAILED，并返回 HTTP 402 Payment Required（表示交易确实执行了但失败，例如余额不足）。"
+    answer_source: "docs:userguide/payment/includes/payment-states.adoc"
+    synonyms: ["支付失败", "PAYMENT_FAILURE", "402", "payment error", "交易失败状态"]
+    notes: "payment-states.adoc 状态映射表"
+
+  - id: KB-Q023
+    question: "对于处于 PENDING 或 UNKNOWN 的支付交易，Kill Bill 怎么最终确定它的状态？"
+    type: positive
+    difficulty: hard
+    module: payment
+    expected_answer: "由 Janitor 这个内部机制负责兜底：Janitor 通知队列会周期性轮询支付插件（调用 getPaymentInfo）来修正状态；插件也可以主动调用 notifyPendingTransactionOfStateChanged 上报。轮询节奏由 org.killbill.payment.janitor.pending.retries（默认 1h,1d）和 org.killbill.payment.janitor.unknown.retries（默认 5m,1h,1d,...）配置。"
+    answer_source: "docs:userguide/payment/includes/payment-states.adoc"
+    synonyms: ["Janitor", "支付状态修复", "PENDING", "UNKNOWN", "挂起交易"]
+    notes: "payment-states.adoc Janitor"
+
+  - id: KB-Q024
+    question: "如果客户用支票在系统外付款，Kill Bill 怎么把这笔款记到发票上？"
+    type: positive
+    difficulty: medium
+    module: payment
+    expected_answer: "Kill Bill 内置了一个名为 ___EXTERNAL_PAYMENT___ 的支付方式，专门用来记录发生在 Kill Bill 系统之外的支付（例如支票）。把款项记在这个支付方式上即可把对应发票核销、余额归零。"
+    answer_source: "docs:userguide/payment/includes/payment-overview.adoc"
+    synonyms: ["外部支付", "___EXTERNAL_PAYMENT___", "支票付款", "external payment method", "线下付款"]
+    notes: "payment-overview.adoc；glossary External Payment Method"
+
+  - id: KB-Q025
+    question: "Kill Bill 默认安装后就自带某个支付网关（比如 Stripe）的插件吗？"
+    type: positive
+    difficulty: medium
+    module: payment
+    expected_answer: "不自带。Kill Bill 对支付网关保持中立，默认不配置任何支付插件；要使用某个网关必须单独安装对应的支付插件，或用 Plugin API 自行开发。"
+    answer_source: "docs:userguide/payment/includes/payment-overview.adoc"
+    synonyms: ["自带支付插件", "默认支付插件", "stripe 内置", "gateway agnostic", "开箱即用支付"]
+    notes: "payment-overview.adoc Payment Plugins Overview"
+
+  # ---------- 逾期（Overdue / Dunning）状态机与升级 ----------
+  - id: KB-Q026
+    question: "逾期（Overdue / 催收）状态是按订阅判断还是按账户判断？"
+    type: positive
+    difficulty: medium
+    module: overdue
+    expected_answer: "按账户（account）级别判断。如果账户下多个订阅中有任一关联发票未付，逾期状态会全局作用于该账户的所有订阅。"
+    answer_source: "docs:userguide/subscription/includes/overdue-overview.adoc"
+    synonyms: ["逾期状态级别", "催收状态", "overdue account level", "dunning", "账户级逾期"]
+    notes: "overdue-overview.adoc"
+
+  - id: KB-Q027
+    question: "逾期配置里，判断是否进入某个逾期状态可以基于哪些条件？"
+    type: positive
+    difficulty: hard
+    module: overdue
+    expected_answer: "可基于：未付发票数量（numberOfUnpaidInvoicesEqualsOrExceeds）、未付发票总余额（totalUnpaidInvoiceBalanceEqualsOrExceeds）、最早未付发票距今的时长（timeSinceEarliestUnpaidInvoiceEqualsOrExceeds）、控制标签包含（controlTagInclusion）或排除（controlTagExclusion）。一个状态的条件需全部成立才生效；另有 responseForLastFailedPaymentIn 但文档标注尚未实现。"
+    answer_source: "docs:userguide/subscription/includes/overdue-config.adoc"
+    synonyms: ["逾期条件", "overdue condition", "未付发票", "controlTagInclusion", "催收触发条件"]
+    notes: "overdue-config.adoc；overdue-configurations/*.xml 示例"
+
+  - id: KB-Q028
+    question: "一个逾期状态可以配置哪些系统行为？"
+    type: positive
+    difficulty: hard
+    module: overdue
+    expected_answer: "可配置 subscriptionCancellationPolicy（是否取消订阅，取值 NONE / IMMEDIATE / END_OF_TERM）、blockChanges（是否禁止客户做计划变更）、disableEntitlementAndChangesBlocked（是否暂停订阅——名字有误导，实际会同时禁用服务权限和计费，逾期解除后两者在该时点恢复）；还可用 externalMessage 供监听 Overdue 事件的插件取用并展示给用户。"
+    answer_source: "docs:userguide/subscription/includes/overdue-config.adoc"
+    synonyms: ["逾期行为", "subscriptionCancellationPolicy", "blockChanges", "暂停订阅", "disableEntitlement"]
+    notes: "overdue-config.adoc"
+
+  - id: KB-Q029
+    question: "逾期配置里的 autoReevaluationInterval 是做什么用的？"
+    type: positive
+    difficulty: medium
+    module: overdue
+    expected_answer: "当账户进入某个逾期状态、但系统里没有任何触发事件（没有新支付、也没有系统重试失败支付）时，它告诉系统每隔多久自动重新评估一次逾期状态，以便必要时推进到下一个逾期状态。"
+    answer_source: "docs:userguide/subscription/includes/overdue-config.adoc"
+    synonyms: ["自动重评估", "autoReevaluationInterval", "逾期升级", "定期重算逾期"]
+    notes: "overdue-config.adoc"
+
+  # ---------- 税费 / 权限 ----------
+  - id: KB-Q030
+    question: "Kill Bill 核心系统会在发票上自动计算并添加税额（TAX）吗？"
+    type: positive
+    difficulty: medium
+    module: invoice
+    expected_answer: "不会。TAX 类型的发票项目不是由核心系统添加的，而是由税务插件（tax plugins）添加的；只有部署了这类插件，发票上才会出现 TAX 项目。"
+    answer_source: "docs:userguide/subscription/includes/invoicing-overview.adoc"
+    synonyms: ["税额计算", "TAX item", "tax plugin", "增值税", "发票税"]
+    notes: "invoicing-overview.adoc；what_is_kill_bill.adoc 提到 Avalara/Vertex 等税务插件"
+
+  - id: KB-Q031
+    question: "Kill Bill 中权限（Permissions）、角色（User Role）和用户（User）是什么关系？"
+    type: positive
+    difficulty: medium
+    module: security
+    expected_answer: "权限是系统中可执行的具体动作（例如 ACCOUNT_CAN_CREATE、TAG_CAN_ADD）；角色是一组权限的集合，一个用户可以拥有多个角色，用户只能执行其角色所包含的权限。Kaui 后台提供基于角色的访问控制（RBAC）。"
+    answer_source: "docs:userguide/glossary/Kill-Bill-Glossary.adoc"
+    synonyms: ["权限", "角色", "RBAC", "user role", "permissions", "用户角色"]
+    notes: "glossary Permissions / User Role；what_is_kill_bill.adoc RBAC"
+
+  # ================= 负样本（应拒答 / 表达未覆盖） =================
+  - id: KB-N001
+    question: "Kill Bill 能自动生成符合中国税务规定的增值税专用发票（含纳税人识别号、发票代码）吗？"
+    type: negative
+    difficulty: medium
+    module: invoice
+    expected_behavior: refuse
+    synonyms: ["增值税专用发票", "中国电子发票", "发票代码", "纳税人识别号", "Chinese VAT invoice", "fapiao"]
+    notes: "系统未覆盖：Kill Bill 只做通用账单与 HTML 发票模板，不生成任何国家税务监管格式的发票。"
+
+  - id: KB-N002
+    question: "Kill Bill 会为我的客户提供一个手机 App（iOS/Android），让客户自己查看和支付发票吗？"
+    type: negative
+    difficulty: medium
+    module: account
+    expected_behavior: refuse
+    synonyms: ["客户手机 App", "自助支付 App", "customer mobile app", "iOS Android 客户端", "客户门户 App"]
+    notes: "系统未覆盖：Kaui 是面向后台员工的管理 UI，没有面向终端客户的自助 App/门户。"
+
+  - id: KB-N003
+    question: "Kill Bill 内置了自动拨打催收电话或群发催款短信的功能吗？"
+    type: negative
+    difficulty: medium
+    module: overdue
+    expected_behavior: refuse
+    synonyms: ["催收电话", "催款短信", "SMS dunning", "自动外呼", "短信提醒"]
+    notes: "系统未覆盖：Overdue 只提供 externalMessage 供外部插件取用，核心不内置短信/语音催收通道。"
+
+  - id: KB-N004
+    question: "Kill Bill 能把发票数据导出成会计总账（General Ledger）或符合 GAAP 的财务报表吗？"
+    type: negative
+    difficulty: hard
+    module: invoice
+    expected_behavior: refuse
+    synonyms: ["会计总账", "General Ledger", "GAAP 报表", "财务科目导出", "总账导出"]
+    notes: "系统未覆盖：没有内置总账/会计准则报表导出能力。"
+
+  - id: KB-N005
+    question: "发票逾期后，系统会自动按天加收滞纳金或罚息吗？"
+    type: negative
+    difficulty: medium
+    module: overdue
+    expected_behavior: refuse
+    synonyms: ["滞纳金", "罚息", "late fee", "逾期利息", "违约金自动计算"]
+    notes: "系统未覆盖：Overdue 状态机只做状态升级/暂停/取消等动作，不计算滞纳金或利息。"
+
+  - id: KB-N006
+    question: "Kill Bill 支持信用卡分期付款（比如分 12 期）吗？"
+    type: negative
+    difficulty: medium
+    module: payment
+    expected_behavior: refuse
+    synonyms: ["分期付款", "installments", "分12期", "账单分期", "等额本息"]
+    notes: "系统未覆盖：没有分期计划/期数的业务概念。"
+
+  - id: KB-N007
+    question: "如果客户名下已经生成了两张独立的未付发票，可以把它们合并成一张发票吗？"
+    type: negative
+    difficulty: hard
+    module: invoice
+    expected_behavior: refuse
+    synonyms: ["合并发票", "发票合并", "invoice consolidation", "merge invoices", "多张发票并一张"]
+    notes: "系统未覆盖：发票一旦生成即基本静态，没有把多张已生成发票合并为一张的接口。"
+
+  - id: KB-N008
+    question: "Kill Bill 能把发票导出成 PDF 文件并自动邮件发给客户吗？"
+    type: negative
+    difficulty: medium
+    module: invoice
+    expected_behavior: refuse
+    synonyms: ["发票 PDF", "导出 PDF", "PDF invoice", "发票邮件发送", "账单邮件"]
+    notes: "系统未覆盖：文档只提到 HTML 品牌的发票呈现模板，没有内置 PDF 导出或邮件投递。"
+
+  - id: KB-N009
+    question: "Kill Bill 支持对发票做数字签名或区块链存证以防篡改吗？"
+    type: negative
+    difficulty: hard
+    module: invoice
+    expected_behavior: refuse
+    synonyms: ["发票数字签名", "区块链存证", "防篡改", "digital signature invoice", "blockchain invoice"]
+    notes: "系统未覆盖：没有发票数字签名/区块链存证能力。"

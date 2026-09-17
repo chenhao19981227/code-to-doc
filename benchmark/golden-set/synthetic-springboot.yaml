@@ -1,0 +1,330 @@
+meta:
+  project: synthetic-springboot
+  module: all
+  domain: "电商订单/定价/会员/履约"
+  created_by: synthetic
+  blinded: true
+  version: 1
+  notes: "盲化黄金集，取自 scenarios/synthetic-springboot/GROUND-TRUTH.md 与源码，不依赖生成的知识库。"
+
+questions:
+  # ---------- 会员折扣 ----------
+  - id: KB-Q001
+    question: "VIP 会员下单能享受几折优惠？"
+    type: positive
+    difficulty: easy
+    module: pricing
+    expected_answer: "按会员等级给折扣系数：普通会员 1.00（无折扣）、白银 0.95（95 折）、黄金 0.90（9 折）、白金 0.85（85 折）。"
+    answer_source: "code:src/main/java/com/acme/mall/pricing/DiscountService.java:12-15"
+    synonyms: ["会员折扣", "VIP优惠", "折扣率", "会员等级打折", "member discount", "discount rate"]
+    notes: "BR-001"
+
+  - id: KB-Q002
+    question: "正在做活动的促销商品，还能再叠加会员折扣吗？"
+    type: positive
+    difficulty: medium
+    module: pricing
+    expected_answer: "不能。参加活动的促销商品按原价结算，不适用会员等级折扣系数。"
+    answer_source: "code:src/main/java/com/acme/mall/pricing/DiscountService.java:36-41"
+    synonyms: ["促销商品折扣", "活动商品会员优惠", "促销例外", "promo item discount", "活动价叠加"]
+    notes: "BR-002"
+
+  # ---------- 运费与免邮 ----------
+  - id: KB-Q003
+    question: "普通订单的运费是多少？买满多少可以包邮？"
+    type: positive
+    difficulty: easy
+    module: shipping
+    expected_answer: "基础运费为 12.00 元；商品折后净额达到 99.00 元（含）即可免除基础运费。"
+    answer_source: "code:src/main/java/com/acme/mall/shipping/ShippingFeeCalculator.java:12-15"
+    synonyms: ["运费", "包邮门槛", "免运费", "满多少免邮", "shipping fee", "free shipping threshold"]
+    notes: "BR-003"
+
+  - id: KB-Q004
+    question: "白金会员也需要凑够 99 元才免运费吗？"
+    type: positive
+    difficulty: medium
+    module: shipping
+    expected_answer: "不需要。白金会员不受金额门槛限制，无条件免除基础运费。"
+    answer_source: "code:src/main/java/com/acme/mall/shipping/ShippingFeeCalculator.java:29-32"
+    synonyms: ["白金免运费", "白金会员包邮", "白金无条件免邮", "PLATINUM free shipping"]
+    notes: "BR-004"
+
+  - id: KB-Q005
+    question: "寄到西藏、新疆这些偏远地区，运费怎么算？免邮还能免掉吗？"
+    type: positive
+    difficulty: hard
+    module: shipping
+    expected_answer: "收货地区属于偏远地区（西藏 XZ、新疆 XJ、内蒙古 NM、青海 QH）时加收 15.00 元附加费；该附加费不参与减免，即使已满足满额免邮或白金免运费，仍照收 15.00 元。"
+    answer_source: "code:src/main/java/com/acme/mall/shipping/ShippingFeeCalculator.java:33-35"
+    synonyms: ["偏远地区", "偏远附加费", "西藏运费", "新疆运费", "remote surcharge"]
+    notes: "BR-005"
+
+  # ---------- 优惠券 ----------
+  - id: KB-Q006
+    question: "优惠券能和会员折扣一起用吗？如果券的优惠没会员折扣多，会怎样？"
+    type: positive
+    difficulty: hard
+    module: coupon
+    expected_answer: "不能叠加。系统分别计算会员折扣省下的金额与最优券的抵扣额，只取对用户更有利的一个；当会员折扣省下的金额不少于最优券抵扣时，放弃用券，返回 0 抵扣（即保留会员折扣）。"
+    answer_source: "code:src/main/java/com/acme/mall/coupon/CouponService.java:29-33"
+    synonyms: ["优惠券叠加会员折扣", "券和折扣互斥", "优惠取更优", "coupon vs member discount"]
+    notes: "BR-006 隐藏规则"
+
+  - id: KB-Q007
+    question: "一个订单可以同时用几张优惠券？"
+    type: positive
+    difficulty: easy
+    module: coupon
+    expected_answer: "一个订单最多只能用 1 张优惠券；若有多张可用，系统选取抵扣金额最大的一张。"
+    answer_source: "code:src/main/java/com/acme/mall/coupon/CouponService.java:11-27"
+    synonyms: ["优惠券数量", "一单几张券", "叠券", "one coupon per order"]
+    notes: "BR-007"
+
+  - id: KB-Q008
+    question: "满减券是按什么规则抵扣的？没达到门槛会怎样？"
+    type: positive
+    difficulty: medium
+    module: coupon
+    expected_answer: "满减券只有在商品净额达到券门槛时才抵扣固定面额，否则不可用（抵扣额为 0）。"
+    answer_source: "code:src/main/java/com/acme/mall/coupon/CouponService.java:43-44"
+    synonyms: ["满减券", "满减规则", "使用门槛", "FULL_REDUCTION"]
+    notes: "BR-008"
+
+  - id: KB-Q009
+    question: "折扣券的抵扣金额是怎么算的？"
+    type: positive
+    difficulty: medium
+    module: coupon
+    expected_answer: "折扣券的抵扣额 = 商品净额 ×（1 − 券比例）。例如券比例为 0.88，抵扣额为净额的 12%。"
+    answer_source: "code:src/main/java/com/acme/mall/coupon/CouponService.java:41-42"
+    synonyms: ["折扣券", "打折券", "券比例", "DISCOUNT coupon"]
+    notes: "BR-008"
+
+  - id: KB-Q010
+    question: "现金券能抵多少钱？"
+    type: positive
+    difficulty: easy
+    module: coupon
+    expected_answer: "现金券直接抵扣固定面额（券面值）。"
+    answer_source: "code:src/main/java/com/acme/mall/coupon/CouponService.java:45-46"
+    synonyms: ["现金券", "代金券", "抵现", "CASH coupon"]
+    notes: "BR-008"
+
+  - id: KB-Q011
+    question: "已经冻结或者过期的优惠券还能抵扣吗？"
+    type: positive
+    difficulty: medium
+    module: coupon
+    expected_answer: "不能。只有可用标志为 true（未冻结）且未过期（到期时间晚于当前时刻）的券才参与抵扣；已冻结、无到期时间或已过期的券会被直接跳过。"
+    answer_source: "code:src/main/java/com/acme/mall/coupon/CouponService.java:20"
+    synonyms: ["冻结券", "过期券", "券有效期", "券能用吗", "coupon usable expired"]
+    notes: "BR-009"
+
+  # ---------- 退款 ----------
+  - id: KB-Q012
+    question: "订单完成之后，多久之内还能申请售后/退款？"
+    type: positive
+    difficulty: easy
+    module: refund
+    expected_answer: "已完成订单的售后申请窗口为自订单完成之日起 7 天内，超过 7 天不得申请退款。"
+    answer_source: "code:src/main/java/com/acme/mall/refund/RefundService.java:14-33"
+    synonyms: ["退款期限", "售后时效", "7天无理由", "refund window", "售后窗口"]
+    notes: "BR-010"
+
+  - id: KB-Q013
+    question: "只退订单里的一件商品（部分退款），运费会一起退吗？"
+    type: positive
+    difficulty: medium
+    module: refund
+    expected_answer: "不会。部分退款只退还所选商品的净额，运费不予退还。"
+    answer_source: "code:src/main/java/com/acme/mall/refund/RefundService.java:38-50"
+    synonyms: ["部分退款", "退运费", "运费退不退", "partial refund shipping"]
+    notes: "BR-011"
+
+  - id: KB-Q014
+    question: "整单退款的话，一共退多少钱？"
+    type: positive
+    difficulty: easy
+    module: refund
+    expected_answer: "整单退款金额 = 商品折后净额 + 运费。"
+    answer_source: "code:src/main/java/com/acme/mall/refund/RefundService.java:38-50"
+    synonyms: ["整单退款", "全额退款", "退款金额", "whole order refund"]
+    notes: "BR-011"
+
+  # ---------- 金额处理 ----------
+  - id: KB-Q015
+    question: "系统里的金额保留几位小数？是怎么取整的？"
+    type: positive
+    difficulty: easy
+    module: pricing
+    expected_answer: "所有对外金额统一四舍五入保留 2 位小数。"
+    answer_source: "code:src/main/java/com/acme/mall/common/AmountUtils.java:20-25"
+    synonyms: ["金额精度", "保留小数", "四舍五入", "amount rounding"]
+    notes: "BR-012"
+
+  - id: KB-Q016
+    question: "会不会出现 0 元或者负价的订单？"
+    type: positive
+    difficulty: medium
+    module: pricing
+    expected_answer: "不会。系统不接受零元或负价订单：任何计算后的应收取金额若低于 0.01 元，一律按 0.01 元收取。"
+    answer_source: "code:src/main/java/com/acme/mall/common/AmountUtils.java:30-36"
+    synonyms: ["最低金额", "0.01元", "零元订单", "minimum charge"]
+    notes: "BR-012 隐藏规则"
+
+  # ---------- 会员运营 ----------
+  - id: KB-Q017
+    question: "运营说的“活跃会员”到底是怎么圈出来的？"
+    type: positive
+    difficulty: hard
+    module: loyalty
+    expected_answer: "活跃会员 = 状态为启用（status=1）且最近一次下单时间在近 365 天内的会员；365 天阈值硬编码在查询 SQL 中。"
+    answer_source: "code:src/main/java/com/acme/mall/loyalty/MemberRepository.java:15-16"
+    synonyms: ["活跃会员", "运营触达人群", "365天", "active members"]
+    notes: "BR-013 隐藏规则"
+
+  # ---------- 订单与状态机 ----------
+  - id: KB-Q018
+    question: "下单后一直不付款，订单会怎样？多久会被取消？"
+    type: positive
+    difficulty: easy
+    module: order
+    expected_answer: "待支付订单自创建起 30 分钟内未支付即视为过期，可被自动取消。"
+    answer_source: "code:src/main/java/com/acme/mall/order/OrderService.java:61-64"
+    synonyms: ["订单超时", "自动取消", "30分钟", "payment timeout", "超时未支付"]
+    notes: "BR-014"
+
+  - id: KB-Q019
+    question: "客户已经付款了，还能直接把订单取消掉吗？"
+    type: positive
+    difficulty: medium
+    module: order
+    expected_answer: "不能。只有待支付（PENDING）订单可以直接取消；已支付及之后的订单一律不允许直接取消，必须走退款流程，否则会抛出异常。"
+    answer_source: "code:src/main/java/com/acme/mall/order/OrderService.java:39-44"
+    synonyms: ["已支付取消", "取消订单", "退款流程", "cancel paid order"]
+    notes: "BR-015"
+
+  - id: KB-Q020
+    question: "一笔订单的应付金额到底是怎么一步一步算出来的？"
+    type: positive
+    difficulty: hard
+    module: pricing
+    expected_answer: "固定顺序：先按会员等级算商品折后净额，再决定优惠（会员折扣与券二选一），然后用扣券后的净额判断运费门槛并计算运费，最后汇总为 应付金额 = 折后净额 − 券抵扣 + 运费，并经过最低 0.01 元兜底。"
+    answer_source: "code:src/main/java/com/acme/mall/pricing/PriceCalculator.java:14-40"
+    synonyms: ["应付金额", "试算顺序", "结算流程", "price calculation order", "计算顺序"]
+    notes: "BR-016"
+
+  - id: KB-Q021
+    question: "订单从下单到完成，正常会经过哪些状态？"
+    type: positive
+    difficulty: easy
+    module: order
+    expected_answer: "正常主链路为：待支付 PENDING -> 已支付 PAID -> 已发货 SHIPPED -> 已完成 COMPLETED；另有旁支 退款中 REFUNDING -> 已退款 REFUNDED，以及已取消 CANCELLED，共 7 个状态。"
+    answer_source: "code:src/main/java/com/acme/mall/order/OrderState.java:6-14"
+    synonyms: ["订单状态", "状态流转", "订单生命周期", "order state flow", "订单状态机"]
+    notes: "SM-001"
+
+  - id: KB-Q022
+    question: "哪些状态的订单可以进入退款流程？"
+    type: positive
+    difficulty: medium
+    module: order
+    expected_answer: "只有已发货（SHIPPED）和已完成（COMPLETED）两种状态的订单允许进入退款流程（REFUNDING）。"
+    answer_source: "code:src/main/java/com/acme/mall/order/OrderService.java:17-18"
+    synonyms: ["可退款状态", "退款条件", "进入退款", "refundable states"]
+    notes: "SM-001"
+
+  # ---------- 角色与权限 ----------
+  - id: KB-Q023
+    question: "客服可以自己审批通过退款吗？"
+    type: positive
+    difficulty: medium
+    module: permission
+    expected_answer: "不可以。只有客服主管（CS_LEAD）角色拥有退款审批权限，普通客服没有审批权。"
+    answer_source: "code:src/main/java/com/acme/mall/refund/RefundController.java:29-33"
+    synonyms: ["退款审批", "审批权限", "客服主管", "refund approval role"]
+    notes: "ROLE-002"
+
+  - id: KB-Q024
+    question: "谁可以帮客户发起退款申请？"
+    type: positive
+    difficulty: easy
+    module: permission
+    expected_answer: "客服（CS）和客服主管（CS_LEAD）都可以代客发起退款申请。"
+    answer_source: "code:src/main/java/com/acme/mall/refund/RefundController.java:12-26"
+    synonyms: ["发起退款", "代客退款", "客服权限", "create refund role"]
+    notes: "ROLE-001"
+
+  # ---------- 负样本：系统未覆盖 ----------
+  - id: KB-N001
+    question: "可以用比特币或者 USDT 这类加密货币付款吗？"
+    type: negative
+    expected_behavior: refuse
+    difficulty: easy
+    module: payment
+    synonyms: ["加密货币", "比特币付款", "USDT", "crypto payment", "数字货币支付"]
+    notes: "系统未覆盖：代码中不存在任何加密货币/数字资产支付相关实现，仅覆盖会员、定价、优惠券、运费、订单与退款。"
+
+  - id: KB-N002
+    question: "支持海外直邮吗？寄到美国大概要多久、运费多少？"
+    type: negative
+    expected_behavior: refuse
+    difficulty: medium
+    module: shipping
+    synonyms: ["国际物流", "海外直邮", "跨境配送", "international shipping", "寄国外"]
+    notes: "系统未覆盖：运费仅处理国内地区编码与偏远地区附加费，不存在国际物流/海外配送时效实现。"
+
+  - id: KB-N003
+    question: "优惠券可以转赠或者送给朋友吗？"
+    type: negative
+    expected_behavior: refuse
+    difficulty: easy
+    module: coupon
+    synonyms: ["优惠券转赠", "送券", "券转让", "coupon transfer", "券赠送"]
+    notes: "系统未覆盖：优惠券实体只有类型、面额、比例、门槛、可用标志与有效期，没有任何转赠/转让逻辑。"
+
+  - id: KB-N004
+    question: "下单后可以开增值税发票吗？在哪里申请？"
+    type: negative
+    expected_behavior: refuse
+    difficulty: medium
+    module: refund
+    synonyms: ["发票", "开票", "增值税发票", "invoice", "开票申请"]
+    notes: "系统未覆盖：代码不存在发票开具/开票申请相关实现。"
+
+  - id: KB-N005
+    question: "买东西能攒积分吗？积分怎么兑换？"
+    type: negative
+    expected_behavior: refuse
+    difficulty: easy
+    module: loyalty
+    synonyms: ["积分", "成长值", "积分兑换", "points", "积分商城"]
+    notes: "系统未覆盖：会员仅包含等级、状态、最近下单时间与累计消费，无积分/成长值体系。"
+
+  - id: KB-N006
+    question: "系统会自动扣减商品库存、防止超卖吗？"
+    type: negative
+    expected_behavior: refuse
+    difficulty: medium
+    module: order
+    synonyms: ["库存扣减", "超卖", "库存管理", "inventory deduction", "扣库存"]
+    notes: "系统未覆盖：代码中不存在商品库存实体或扣减/防超卖逻辑。"
+
+  - id: KB-N007
+    question: "报价时能切换成美元或欧元结算吗？汇率是怎么算的？"
+    type: negative
+    expected_behavior: refuse
+    difficulty: medium
+    module: pricing
+    synonyms: ["多币种", "汇率", "美元结算", "multi-currency", "外币支付"]
+    notes: "系统未覆盖：所有金额均为人民币 BigDecimal 计算，无多币种/汇率换算实现。"
+
+  - id: KB-N008
+    question: "能查询包裹的实时物流轨迹吗？"
+    type: negative
+    expected_behavior: refuse
+    difficulty: easy
+    module: shipping
+    synonyms: ["物流轨迹", "快递单号查询", "实时物流", "tracking", "查快递"]
+    notes: "系统未覆盖：系统只计算运费，不含物流单号或轨迹查询实现。"

@@ -1,0 +1,22 @@
+# ---- third-party benchmark clones (re-create with scripts/clone-benchmark.ps1) ----
+benchmark/killbill/
+benchmark/killbill-docs/
+
+# ---- pipeline work artifacts (regenerable) ----
+.bizdoc/
+.bizdoc-kb2/
+.bizdoc-killbill/
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---- editors / OS ----
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini
+*.swp

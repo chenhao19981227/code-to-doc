@@ -40,13 +40,13 @@ description: 说明业务知识库评测体系 L0引用有效性 / L1引用忠�
 
 ```bash
 # L0 + L2（无需 LLM）
-python eval/mechanical.py --kb docs/biz --root benchmark/killbill --json
+python eval/mechanical.py --kb docs/biz --root <代码根> --json
 
 # L1 忠实度（抽样）
-python eval/fidelity.py --kb docs/biz --root benchmark/killbill --sample 0.3 --json
+python eval/fidelity.py --kb docs/biz --root <代码根> --sample 0.3 --json
 
 # L4 端到端问答
-python eval/qa_eval.py --kb docs/biz --golden benchmark/golden-set/killbill-invoice.yaml --k 5 --json
+python eval/qa_eval.py --kb docs/biz --golden <黄金集目录>/killbill-invoice.yaml --k 5 --json
 ```
 
 LLM 配置（环境变量，FORMATS.md §3.1）：
@@ -72,7 +72,7 @@ LLM_MODEL    = deepseek-chat               (默认)
 
 ### 5. 黄金集格式（FORMATS.md §2）
 
-位置：`benchmark/golden-set/<project>-<module>.yaml`
+位置：`<黄金集目录>/<project>-<module>.yaml`
 
 ```yaml
 meta:
@@ -112,7 +112,7 @@ questions:
 
 ### 7. 构建流程（防自证循环）
 
-1. **选信源**：官方文档、源码 itself、测试、Issue（如 `benchmark/killbill-docs/`、`benchmark/killbill/**/src/test`）。**绝不打开 `kb_dir`。**
+1. **选信源**：官方文档、源码 itself、测试、Issue（如 `<官方文档目录>/`、`<代码根>/**/src/test`）。**绝不打开 `kb_dir`。**
 2. **出题**：按模块合成问题，写 `expected_answer` 并绑定 `answer_source`。
 3. **正负配比**：positive 占 70%~80%，negative 占 20%~30%；negative 的 `expected_behavior: refuse`。
 4. **难度分布**：标注 `easy` / `medium` / `hard`。
@@ -122,13 +122,13 @@ questions:
 ### 8. 产出与交接
 
 - 本 skill 的产出是**说明与清单**，通常不直接落盘。
-- 若调用方要求生成黄金集骨架：在 `benchmark/golden-set/<project>-<module>.yaml` 写出符合 §2 格式的文件，`meta.blinded: true`，题目必须来自独立信源。
+- 若调用方要求生成黄金集骨架：在 `<黄金集目录>/<project>-<module>.yaml` 写出符合 §2 格式的文件，`meta.blinded: true`，题目必须来自独立信源。
 - 生成的黄金集路径作为后续 `biz-doc-verify` 的 `golden` 输入（**文件路径交接**，不内联内容）。
 
 ## 输出格式
 
 - **主产出（无落盘）**：被测知识库 `kb_dir`、代码根 `code_root`、黄金集 `golden` 的路径清单，供 `biz-doc-verify` 调用。
-- **可选落盘**：`benchmark/golden-set/<project>-<module>.yaml`，格式严格照 `docs/FORMATS.md` §2（`meta` 含 `project/module/domain/created_by/blinded/version/notes`；`questions[]` 含 `id/question/type/difficulty/module/expected_answer/answer_source/synonyms/notes`）。
+- **可选落盘**：`<黄金集目录>/<project>-<module>.yaml`，格式严格照 `docs/FORMATS.md` §2（`meta` 含 `project/module/domain/created_by/blinded/version/notes`；`questions[]` 含 `id/question/type/difficulty/module/expected_answer/answer_source/synonyms/notes`）。
 - **口径清单**：L0/L1/L2/L4 的脚本、LLM 依赖、指标名，以及 §3.5 成功阈值，按本 skill §1~§4 表格原样引用。
 - 任何情况下都不产出评测指标数值——数值只能来自 `eval/` 脚本的真实运行。
 
@@ -138,4 +138,4 @@ questions:
 - **不得实现评测脚本**：`eval/` 由独立模块负责，本 skill 只引用其 CLI 与口径。
 - **不得发明指标名**：一律使用 FORMATS.md §3.2/§3.4 的原始指标名。
 - **不改动 `docs/FORMATS.md` / `README.md`**；不修改源码。
-- 一切写作仅限 `benchmark/golden-set/` 与 `.bizdoc/`。
+- 一切写作仅限 `<黄金集目录>/` 与 `.bizdoc/`。

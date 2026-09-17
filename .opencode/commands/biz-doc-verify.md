@@ -14,9 +14,9 @@ description: 对已生成的业务知识库重跑验证（仅评测，不重新�
 ```
 
 示例：
-- `/biz-doc-verify docs/biz --root scenarios/synthetic-springboot`
-- `/biz-doc-verify docs/biz --root benchmark/killbill --golden benchmark/golden-set/killbill-invoice.yaml`
-- `/biz-doc-verify docs/biz --root benchmark/killbill --golden benchmark/golden-set/killbill-invoice.yaml --sample 0.5 --k 5`
+- `/biz-doc-verify docs/biz --root <代码根>`
+- `/biz-doc-verify docs/biz --root <代码根> --golden <黄金集目录>/killbill-invoice.yaml`
+- `/biz-doc-verify docs/biz --root <代码根> --golden <黄金集目录>/killbill-invoice.yaml --sample 0.5 --k 5`
 
 参数解析：
 - `kb_dir`（必填）：待评测的知识库目录，如 `docs/biz`

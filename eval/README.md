@@ -27,13 +27,13 @@ python -m pip install -r eval/requirements.txt
 
 ```bash
 # L0 + L2（无需 LLM）
-python eval/mechanical.py --kb docs/biz --root benchmark/killbill --json
+python eval/mechanical.py --kb docs/biz --root <代码根> --json
 
 # L1 忠实度（抽样 30%，需要 LLM）
-python eval/fidelity.py --kb docs/biz --root benchmark/killbill --sample 0.3 --json
+python eval/fidelity.py --kb docs/biz --root <代码根> --sample 0.3 --json
 
 # L4 端到端问答（需要 LLM 与黄金集）
-python eval/qa_eval.py --kb docs/biz --golden benchmark/golden-set/killbill-invoice.yaml --k 5 --json
+python eval/qa_eval.py --kb docs/biz --golden <黄金集目录>/killbill-invoice.yaml --k 5 --json
 
 # 检索器单独调试
 python eval/retrieval.py --kb docs/biz "发票什么时候生成" --k 5
@@ -65,7 +65,7 @@ python eval/retrieval.py --kb docs/biz "发票什么时候生成" --k 5
 $env:LLM_PROVIDER = "deepseek"
 $env:LLM_API_KEY  = "sk-..."
 $env:LLM_MODEL    = "deepseek-chat"
-python eval/fidelity.py --kb docs/biz --root benchmark/killbill --sample 0.3 --json
+python eval/fidelity.py --kb docs/biz --root <代码根> --sample 0.3 --json
 ```
 
 `LLM_PROVIDER=none`（或未设置 key）时：
@@ -175,7 +175,7 @@ KB 卡片，两者无法机械一一对应。实现为：
 
 ```powershell
 python eval/retrieval.py --kb docs\biz --k 3 "test"
-python eval/mechanical.py --kb docs\biz --root benchmark\killbill --json
-$env:LLM_PROVIDER="none"; python eval/fidelity.py --kb docs\biz --root benchmark\killbill --sample 0.3 --json
-python eval/qa_eval.py --kb docs\biz --golden benchmark\golden-set\none.yaml --k 5 --json
+python eval/mechanical.py --kb docs\biz --root <代码根> --json
+$env:LLM_PROVIDER="none"; python eval/fidelity.py --kb docs\biz --root <代码根> --sample 0.3 --json
+python eval/qa_eval.py --kb docs\biz --golden <黄金集目录>\none.yaml --k 5 --json
 ```

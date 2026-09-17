@@ -14,7 +14,7 @@ description: 从已有代码逆向生成业务知识库（领域概念/业务规
 ```
 
 参数解析：
-- `target_root`（必填）：待逆向的代码根目录，如 `scenarios/synthetic-springboot`、`benchmark/killbill`
+- `target_root`（必填）：待逆向的代码根目录，如 `<代码根>`
 - `--out`（可选）：知识库输出根目录，默认 `docs/biz`
 - `--modules`（可选）：逗号分隔的模块白名单；不传则处理 `inventory.json` 的全部模块
 - `--golden`（可选）：黄金集 YAML 路径，传给 verify 的 L4

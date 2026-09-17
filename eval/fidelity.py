@@ -30,8 +30,8 @@ Network I/O only happens when the script runs with a real provider; with
 
 CLI::
 
-    python eval/fidelity.py --kb docs/biz --root benchmark/killbill --sample 0.3 --json
-    python eval/fidelity.py --kb docs/biz --root benchmark/killbill --sample 0.3 --write-report
+    python eval/fidelity.py --kb docs/biz --root <代码根> --sample 0.3 --json
+    python eval/fidelity.py --kb docs/biz --root <代码根> --sample 0.3 --write-report
 """
 
 from __future__ import annotations
@@ -271,7 +271,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         description="L1 citation fidelity via LLM judge, sampled (docs/FORMATS.md §3)."
     )
     parser.add_argument("--kb", required=True, help="knowledge base directory, e.g. docs/biz")
-    parser.add_argument("--root", required=True, help="source code root, e.g. benchmark/killbill")
+    parser.add_argument("--root", required=True, help="source code root, e.g. <代码根>")
     parser.add_argument("--sample", type=float, default=0.3, help="fraction of eligible cards to judge")
     parser.add_argument("--json", action="store_true", help="print a single JSON object to stdout")
     parser.add_argument("--write-report", action="store_true", help="write markdown report to <kb>/verification/")

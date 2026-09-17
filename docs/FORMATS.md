@@ -15,13 +15,11 @@ D:\openCodeProject\code-to-doc\
 ├── .opencode\
 │   ├── commands\                # 编排命令 (/biz-doc, /biz-doc-verify)
 │   └── skills\                  # skill 定义
-├── benchmark\
-│   ├── killbill\                # 基准项目源码（浅克隆）
-│   ├── killbill-docs\           # 基准项目官方文档（= 标准答案）
-│   └── golden-set\              # 黄金集 YAML
+├── <代码根>\                    # 基准项目源码（浅克隆）
+├── <官方文档目录>\              # 基准项目官方文档（= 标准答案）
+├── <黄金集目录>\                # 黄金集 YAML
 ├── eval\                        # 评测脚本
-├── scenarios\
-│   └── synthetic-springboot\    # 自建合成模块 + ground truth
+├── <代码根>\                    # 自建合成模块 + ground truth
 ├── docs\
 │   ├── FORMATS.md               # 本文件
 │   └── biz\                     # 生成的知识库输出位置（默认）
@@ -122,7 +120,7 @@ stateDiagram-v2
 
 ## 2. 黄金集格式
 
-位置：`benchmark/golden-set/<project>-<module>.yaml`
+位置：`<黄金集目录>/<project>-<module>.yaml`
 
 ```yaml
 meta:
@@ -190,16 +188,16 @@ LLM_MODEL    = deepseek-chat               (默认)
 
 ```bash
 # L0 + L2（无需 LLM）
-python eval/mechanical.py --kb docs/biz --root benchmark/killbill --json
+python eval/mechanical.py --kb docs/biz --root <代码根> --json
 
 # 仅提取了部分模块时：用 --scope 把 L2 盘点范围对齐到提取范围（否则覆盖率分母是整个仓库）
-python eval/mechanical.py --kb docs/biz-killbill --root benchmark/killbill --scope invoice,overdue --json
+python eval/mechanical.py --kb docs/biz-<名称> --root <代码根> --scope invoice,overdue --json
 
 # L1 忠实度（抽样）
-python eval/fidelity.py --kb docs/biz --root benchmark/killbill --sample 0.3 --json
+python eval/fidelity.py --kb docs/biz --root <代码根> --sample 0.3 --json
 
 # L4 端到端问答
-python eval/qa_eval.py --kb docs/biz --golden benchmark/golden-set/killbill-invoice.yaml --k 5 --json
+python eval/qa_eval.py --kb docs/biz --golden <黄金集目录>/killbill-invoice.yaml --k 5 --json
 ```
 
 > **L2 范围对齐（重要）**：`mechanical.py` 新增可选参数 `--scope <p1,p2>`，用逗号分隔的**相对 `--root` 的路径前缀**限定实体盘点范围。

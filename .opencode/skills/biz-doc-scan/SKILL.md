@@ -10,7 +10,7 @@ description: 机械式盘点目标代码根目录，输出模块/类/枚举/公�
 ## 输入
 
 调用方（subAgent）会提供：
-- `target_root`：待盘点的代码根目录（如 `scenarios/synthetic-springboot`）
+- `target_root`：待盘点的代码根目录（如 `<代码根>`）
 - `workdir`：工作目录（= 项目根 `code-to-doc`）
 - `work_dir`：工作输出目录，默认 `.bizdoc/`（相对于 `workdir`）
 
@@ -87,7 +87,7 @@ description: 机械式盘点目标代码根目录，输出模块/类/枚举/公�
 
 ```json
 {
-  "root": "scenarios/synthetic-springboot",
+  "root": "<代码根>",
   "scanned_at": "2026-01-01T00:00:00Z",
   "languages": ["java"],
   "modules": [

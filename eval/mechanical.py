@@ -49,8 +49,8 @@ Reported metrics:
 
 CLI::
 
-    python eval/mechanical.py --kb docs/biz --root benchmark/killbill --json
-    python eval/mechanical.py --kb docs/biz --root benchmark/killbill --write-report
+    python eval/mechanical.py --kb docs/biz --root <代码根> --json
+    python eval/mechanical.py --kb docs/biz --root <代码根> --write-report
 
 Exit code is 0 on success, even when the KB or root is empty (a clear message is then
 printed and null/zero metrics are reported).
@@ -615,7 +615,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         description="L0 citation validity + L2 coverage, no LLM (docs/FORMATS.md §3)."
     )
     parser.add_argument("--kb", required=True, help="knowledge base directory, e.g. docs/biz")
-    parser.add_argument("--root", required=True, help="source code root, e.g. benchmark/killbill")
+    parser.add_argument("--root", required=True, help="source code root, e.g. <代码根>")
     parser.add_argument("--json", action="store_true", help="print a single JSON object to stdout")
     parser.add_argument("--write-report", action="store_true", help="write markdown report to <kb>/verification/")
     parser.add_argument(

@@ -99,8 +99,8 @@ python eval/qa_eval.py    --kb <kb_dir> --golden <golden.yaml> --k <k> --json
 ```json
 {
   "kb_dir": "docs/biz",
-  "code_root": "scenarios/synthetic-springboot",
-  "golden": "benchmark/golden-set/x.yaml",
+  "code_root": "<代码根>",
+  "golden": "<黄金集目录>/x.yaml",
   "layers": {
     "L0": { "script": "eval/mechanical.py", "status": "ok" },
     "L2": { "script": "eval/mechanical.py", "status": "ok" },

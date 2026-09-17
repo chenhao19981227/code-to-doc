@@ -38,8 +38,8 @@ is tolerated the same way, so the harness can be smoke-tested on an empty worksp
 
 CLI::
 
-    python eval/qa_eval.py --kb docs/biz --golden benchmark/golden-set/kb.yaml --k 5 --json
-    python eval/qa_eval.py --kb docs/biz --golden benchmark/golden-set/kb.yaml --k 5 --write-report
+    python eval/qa_eval.py --kb docs/biz --golden <黄金集目录>/kb.yaml --k 5 --json
+    python eval/qa_eval.py --kb docs/biz --golden <黄金集目录>/kb.yaml --k 5 --write-report
 """
 
 from __future__ import annotations
@@ -690,7 +690,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         description="L4 end-to-end QA: retrieve -> answer -> judge (docs/FORMATS.md §3)."
     )
     parser.add_argument("--kb", required=True, help="knowledge base directory, e.g. docs/biz")
-    parser.add_argument("--golden", required=True, help="golden set YAML, e.g. benchmark/golden-set/kb.yaml")
+    parser.add_argument("--golden", required=True, help="golden set YAML, e.g. <黄金集目录>/kb.yaml")
     parser.add_argument("--k", type=int, default=5, help="number of chunks to retrieve (default 5)")
     parser.add_argument(
         "--rerank-pool",
